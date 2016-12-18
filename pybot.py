@@ -183,13 +183,17 @@ class App:
         self.baseurl = baseurl
         self._taskq = []
         self._data0 = None
-        print('App(%d,%d, baseurl=%r)' % (self.width, self.height, self.baseurl))
+        self.log('App(%d,%d, baseurl=%r)' % (self.width, self.height, self.baseurl))
+        return
+
+    def log(self, *args):
+        print(' '.join(args))
         return
 
     def poll(self):
         url = self.baseurl
         if url is None: return False
-        print('poll: %r' % url)
+        self.log('poll: %r' % url)
         data = None
         if url.startswith('http://'):
             try:
@@ -215,12 +219,12 @@ class App:
                 (board, code, codelimit, cmdlimit) = eval(data.strip())
                 self.init(board, code, codelimit=codelimit, cmdlimit=cmdlimit)
             except Exception as e:
-                print('DATA ERROR: %r' % e)
+                self.log('DATA ERROR: %r' % e)
             return True
         return False
 
     def init(self, board, code=[], codelimit=None, cmdlimit=None):
-        print('init')
+        self.log('init')
         self.codelimit = codelimit
         self.cmdlimit = cmdlimit
         self.loadBoard(board)
@@ -292,10 +296,10 @@ class App:
             try:
                 if self.poll(): return
             except IOError as e:
-                print('poll: error: %s' % e)
+                self.log('poll: error: %s' % e)
         assert self._editpos < len(self._code)
         assert self._runpos < len(self._code)
-        print('keypress: %r' % k)
+        self.log('keypress: %r' % k)
         self.playSound()
         if self.mode == 'editor':
             self.keypressEditor(k)
@@ -315,7 +319,7 @@ class App:
         return
 
     def initEditor(self):
-        print('initEditor')
+        self.log('initEditor')
         self.mode = 'editor'
         self.playSound('mode_editor')
         self._editpos = 0
@@ -365,7 +369,7 @@ class App:
         return
 
     def initRuntime(self):
-        print('initRuntime')
+        self.log('initRuntime')
         self.mode = 'runtime'
         self.playSound('mode_runtime')
         self.resetState()
@@ -381,7 +385,7 @@ class App:
             self._running = False
             if 0 < len(self._history):
                 (cmd, state) = self._history.pop(-1)
-                print('undo: %r' % cmd)
+                self.log('undo: %r' % cmd)
                 self.playCmd(cmd)
                 self.playSound('cmd_undo')
                 self.setState(state)
@@ -429,7 +433,7 @@ class App:
         return
 
     def loadBoard(self, data):
-        print('loadBoard: %r' % data)
+        self.log('loadBoard: %r' % data)
         self._board = {}
         self._startpos = None
         self._startdir = None
@@ -446,13 +450,13 @@ class App:
         return
 
     def loadCode(self, code):
-        print('loadCode: %r' % code)
+        self.log('loadCode: %r' % code)
         self._editpos = 0
         self._code = list(code)+[None]
         return
 
     def jumpTo(self, label):
-        print('jumpTo: %r' % label)
+        self.log('jumpTo: %r' % label)
         for (i,c) in enumerate(self._code):
             if label == c:
                 self._runpos = i
@@ -460,7 +464,7 @@ class App:
         return
 
     def resetState(self):
-        print('resetState')
+        self.log('resetState')
         self._robpos = self._startpos
         self._robdir = self._startdir
         self._haskey = False
@@ -477,7 +481,7 @@ class App:
         return
 
     def moveTo(self, pos):
-        print('moveTo: %r' % (pos,))
+        self.log('moveTo: %r' % (pos,))
         assert pos in self._board
         self.playTile(pos)
         c = self._board[pos]
@@ -499,7 +503,7 @@ class App:
         return
 
     def execCmd(self, cmd):
-        print('execCmd: %r' % cmd)
+        self.log('execCmd: %r' % cmd)
         self.playCmd(cmd)
         if cmd == 'L':
             (vx,vy) = self._robdir
@@ -658,7 +662,11 @@ def main(argv):
     #
     pygame.mixer.pre_init(22050, -16, 1)
     pygame.init()
+    modes = pygame.display.list_modes()
+    if mode not in modes:
+        mode = modes[0]
     pygame.display.set_mode(mode, flags)
+    pygame.mouse.set_visible(0)
     pygame.key.set_repeat()
     font = pygame.font.Font(fontpath, 64)
     sounds = {}
