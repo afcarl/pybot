@@ -97,10 +97,10 @@ SYM2CMD = {
     '3': 'R',
     '4': 'H1',
     '5': 'J1',
-    '6': 'C1',
+    '6': 'B1',
     '7': 'H2',
     '8': 'J2',
-    '9': 'C2',
+    '9': 'B2',
 }
 
 TILE2SOUND = {
@@ -132,10 +132,10 @@ CMD2SOUND = {
     'R': 'cmd_right',
     'H1': 'cmd_here1',
     'J1': 'cmd_jump1',
-    'C1': 'cmd_cond1',
+    'B1': 'cmd_branch1',
     'H2': 'cmd_here2',
     'J2': 'cmd_jump2',
-    'C2': 'cmd_cond2',
+    'B2': 'cmd_branch2',
 }
 
 SND_OK = 'snd_ok'
@@ -167,10 +167,10 @@ SOUNDS = (
     'cmd_right',
     'cmd_here1',
     'cmd_jump1',
-    'cmd_cond1',
+    'cmd_branch1',
     'cmd_here2',
     'cmd_jump2',
-    'cmd_cond2',
+    'cmd_branch2',
 )
 
 class App:
@@ -526,10 +526,10 @@ class App:
             self.jumpTo('H1')
         elif cmd == 'J2':
             self.jumpTo('H2')
-        elif cmd == 'C1':
+        elif cmd == 'B1':
             if not self._haskey:
                 self.jumpTo('H1')
-        elif cmd == 'C2':
+        elif cmd == 'B2':
             if not self._haskey:
                 self.jumpTo('H2')
         return
