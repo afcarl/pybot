@@ -175,15 +175,15 @@ SOUNDS = (
 
 class App:
 
-    def __init__(self, surface, font, sounds, baseurl=None):
+    def __init__(self, surface, font, sounds, baseurls):
         (self.width, self.height) = surface.get_size()
         self.surface = surface
         self.font = font
         self.sounds = sounds
-        self.baseurl = baseurl
+        self.baseurls = baseurls
         self._taskq = []
         self._data0 = None
-        self.log('App(%d,%d, baseurl=%r)' % (self.width, self.height, self.baseurl))
+        self.log('App(%d,%d, baseurls=%r)' % (self.width, self.height, self.baseurls))
         return
 
     def log(self, *args):
@@ -191,36 +191,43 @@ class App:
         return
 
     def poll(self):
-        url = self.baseurl
-        if url is None: return False
-        self.log('poll: %r' % url)
-        data = None
-        if url.startswith('http://'):
-            try:
-                index = urlopen(url)
-                if index.getcode() not in (None, 200):
-                    raise IOError('not found: %r' % url)
-                data = index.read()
-                index.close()
-            except IOError as e:
-                raise
-        else:
-            # fallback to local files.
-            try:
-                index = open(url)
-                data = index.read()
-                index.close()
-            except IOError as e:
-                raise
-        if self._data0 != data:
-            self._data0 = data
-            self.playSound('level_change')
-            try:
-                (board, code, codelimit, cmdlimit) = eval(data.strip())
+        for url in self.baseurls:
+            if url.startswith('//'):
+                addr = get_server_addr()
+                if addr is None: continue
+                url = 'http://%s/%s' % (addr, url[2:])
+            data = None
+            self.log('poll: %r' % url)
+            if url.startswith('http://'):
+                try:
+                    index = urlopen(url)
+                    if index.getcode() not in (None, 200):
+                        self.log('poll: http error: %s' % e)
+                        continue
+                    data = index.read()
+                    index.close()
+                except IOError as e:
+                    self.log('poll: io error: %s' % e)
+                    continue
+            else:
+                # fallback to local files.
+                try:
+                    index = open(url)
+                    data = index.read()
+                    index.close()
+                except IOError as e:
+                    self.log('poll: io error: %s' % e)
+                    continue
+            if self._data0 != data:
+                try:
+                    (board, code, codelimit, cmdlimit) = eval(data.strip())
+                except Exception as e:
+                    self.log('poll: invalid data: %r' % e)
+                    continue
+                self._data0 = data
+                self.playSound('level_change')
                 self.init(board, code, codelimit=codelimit, cmdlimit=cmdlimit)
-            except Exception as e:
-                self.log('DATA ERROR: %r' % e)
-            return True
+                return True
         return False
 
     def init(self, board, code=[], codelimit=None, cmdlimit=None):
@@ -297,10 +304,7 @@ class App:
     
     def keypress(self, k):
         if k == 'BS':
-            try:
-                if self.poll(): return
-            except IOError as e:
-                self.log('poll: error: %s' % e)
+            if self.poll(): return
         assert self._editpos < len(self._code)
         assert self._runpos < len(self._code)
         self.log('keypress: %r' % k)
@@ -656,18 +660,11 @@ def main(argv):
     flags = 0
     fontpath = './fonts/VeraMono.ttf'
     sounddir = './sounds/'
-    baseurl = None
     for (k, v) in opts:
         if k == '-d': debug += 1
         elif k == '-f': flags = pygame.FULLSCREEN
         elif k == '-F': fontpath = v
         elif k == '-S': sounddir = v
-    if args:
-        baseurl = args.pop(0)
-        if baseurl == '//':
-            addr = get_server_addr()
-            if addr is not None:
-                baseurl = 'http://%s/pybot/index.txt' % addr
     #
     pygame.mixer.pre_init(22050, -16, 1)
     pygame.init()
@@ -683,12 +680,9 @@ def main(argv):
         path = os.path.join(sounddir, name+'.wav')
         sounds[name] = pygame.mixer.Sound(path)
     #
-    app = App(pygame.display.get_surface(), font, sounds, baseurl)
+    app = App(pygame.display.get_surface(), font, sounds, args)
     app.init('@#./.../#=!/..%/E..')
-    try:
-        app.poll()
-    except IOError:
-        pass
+    app.poll()
     return app.run()
 
 if __name__ == '__main__': sys.exit(main(sys.argv))
