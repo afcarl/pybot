@@ -276,6 +276,10 @@ class App:
             self._taskq = []
         return
 
+    def addTask(self, task):
+        self._taskq.append(task)
+        return
+
     def update(self):
         if self._taskq:
             if not pygame.mixer.get_busy():
@@ -309,12 +313,13 @@ class App:
 
     def refresh(self):
         self.surface.fill(BGCOLOR)
-        self.drawText(self.mode, 0, 0)
+        self.drawBoard(16, 96)
         if self.mode == 'editor':
-            self.drawCode(32, 80, self._editpos, self._curcmd)
+            self.drawText('Editor', 16, 0)
+            self.drawCode(256, 80, self._editpos, self._curcmd)
         elif self.mode == 'runtime':
-            self.drawBoard(16, 80)
-            self.drawCode(250, 80, self._runpos)
+            self.drawText('Runtime', 16, 0)
+            self.drawCode(256, 80, self._runpos)
         pygame.display.flip()
         return
 
@@ -324,6 +329,7 @@ class App:
         self.playSound('mode_editor')
         self._editpos = 0
         self._curcmd = None
+        self.resetState()
         self.playCmd(self._code[self._editpos])
         return
 
@@ -393,9 +399,10 @@ class App:
                 self.playSound(SND_NG)
         elif k == '+':
             self._running = False
-            cmd = self.stepCmd()
-            if cmd is None:
-                self.playSound(SND_NG)
+            cmd = self._code[self._runpos]
+            self.playCmd(cmd)
+            if cmd is not None:
+                self.addTask(self.stepCmd)
         else:
             pos = SYM2POS.get(k)
             self.playTile(pos, playEmpty=True)
@@ -406,8 +413,11 @@ class App:
         t = pygame.time.get_ticks()
         if t < self._nexttime: return
         self._nexttime = t+1000
-        cmd = self.stepCmd()
-        if cmd is None:
+        cmd = self._code[self._runpos]
+        self.playCmd(cmd)
+        if cmd is not None:
+            self.addTask(self.stepCmd)
+        else:
             self._running = False
         self.refresh()
         return
@@ -418,14 +428,14 @@ class App:
         if self._runpos == 0:
             self.playSound('level_begin')
         return
-    
+
     def stepCmd(self):
         cmd = self._code[self._runpos]
         if cmd is not None:
             self._history.append((cmd, self.getState()))
             self._runpos += 1
         self.execCmd(cmd)
-        return cmd
+        return
 
     def clearLevel(self):
         self._running = False
@@ -504,7 +514,6 @@ class App:
 
     def execCmd(self, cmd):
         self.log('execCmd: %r' % cmd)
-        self.playCmd(cmd)
         if cmd == 'L':
             (vx,vy) = self._robdir
             self._robdir = (vy,-vx)
@@ -532,6 +541,7 @@ class App:
         elif cmd == 'B2':
             if not self._haskey:
                 self.jumpTo('H2')
+        self.refresh()
         return
 
     def playCmd(self, cmd):
@@ -564,19 +574,18 @@ class App:
                 self.playSound(SND_NG)
         return
 
-    def drawCode(self, x0, y0, focus, curcmd=None, nlines=5):
-        start = focus - nlines//2
+    def drawCode(self, x0, y0, start, curcmd=None, nlines=5):
         for y in range(nlines):
             i = start+y
             if i < 0 or len(self._code) <= i: continue
-            if i == focus and curcmd is not None:
+            if i == start and curcmd is not None:
                 cmd = curcmd
             else:
                 cmd = self._code[i]
             if cmd is None:
                 cmd = '_'
             line = '%02d: %s' % (i+1, cmd)
-            self.drawText(line, x0, y*LINE+y0, i == focus)
+            self.drawText(line, x0, y*LINE+y0, i == start)
         return
 
     def drawBoard(self, x0, y0):
@@ -645,7 +654,7 @@ def main(argv):
     debug = 0
     mode = (640,480)
     flags = 0
-    fontpath = './fonts/Vera.ttf'
+    fontpath = './fonts/VeraMono.ttf'
     sounddir = './sounds/'
     baseurl = None
     for (k, v) in opts:
