@@ -649,7 +649,7 @@ class App:
 def main(argv):
     import getopt
     def usage():
-        print('usage: %s [-d] [-f] [-F fonts] [-S sounds] [url]' % argv[0])
+        print('usage: %s [-d] [-f] [-F fonts] [-S sounds] [url ...]' % argv[0])
         return 100
     try:
         (opts, args) = getopt.getopt(argv[1:], 'dfF:S:')

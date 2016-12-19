@@ -84,3 +84,6 @@ Works with Python2/3 + Pygame (including Raspberry Pi).
   * 以下の URL にアクセス可能にする:
     http://xxx.xxx.xxx.1/pybot/index.txt
   * この URL から上記の問題ファイル (level*.txt) をダウンロードできるようにしておく。
+  * クライアントを以下の方法で起動する。
+  
+    $ python pybot.py //pybot/index.txt
