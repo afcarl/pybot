@@ -191,21 +191,22 @@ class App:
         return
 
     def poll(self):
+        data = None
         for url in self.baseurls:
             if url.startswith('//'):
                 addr = get_server_addr()
                 if addr is None: continue
                 url = 'http://%s/%s' % (addr, url[2:])
-            data = None
             self.log('poll: %r' % url)
             if url.startswith('http://'):
                 try:
                     index = urlopen(url)
                     if index.getcode() not in (None, 200):
-                        self.log('poll: http error: %s' % e)
+                        self.log('poll: http error: %s' % index.getcode())
                         continue
                     data = index.read()
                     index.close()
+                    break
                 except IOError as e:
                     self.log('poll: io error: %s' % e)
                     continue
@@ -215,19 +216,20 @@ class App:
                     index = open(url)
                     data = index.read()
                     index.close()
+                    break
                 except IOError as e:
                     self.log('poll: io error: %s' % e)
                     continue
-            if self._data0 != data:
-                try:
-                    (board, code, codelimit, cmdlimit) = eval(data.strip())
-                except Exception as e:
-                    self.log('poll: invalid data: %r' % e)
-                    continue
-                self._data0 = data
-                self.playSound('level_change')
-                self.init(board, code, codelimit=codelimit, cmdlimit=cmdlimit)
-                return True
+        if self._data0 != data:
+            try:
+                (board, code, codelimit, cmdlimit) = eval(data.strip())
+            except Exception as e:
+                self.log('poll: invalid data: %r' % e)
+                return False
+            self._data0 = data
+            self.playSound('level_change')
+            self.init(board, code, codelimit=codelimit, cmdlimit=cmdlimit)
+            return True
         return False
 
     def init(self, board, code=[], codelimit=None, cmdlimit=None):

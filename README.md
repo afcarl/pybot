@@ -86,4 +86,4 @@ Works with Python2/3 + Pygame (including Raspberry Pi).
   * この URL から上記の問題ファイル (level*.txt) をダウンロードできるようにしておく。
   * クライアントを以下の方法で起動する。
   
-    $ python pybot.py //pybot/index.txt
+    $ python pybot.py -f //pybot/index.txt
