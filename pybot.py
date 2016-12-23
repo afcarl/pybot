@@ -171,6 +171,27 @@ SOUNDS = (
     'cmd_here2',
     'cmd_jump2',
     'cmd_branch2',
+    'num_00',
+    'num_01',
+    'num_02',
+    'num_03',
+    'num_04',
+    'num_05',
+    'num_06',
+    'num_07',
+    'num_08',
+    'num_09',
+    'num_10',
+    'num_11',
+    'num_12',
+    'num_13',
+    'num_14',
+    'num_15',
+    'num_16',
+    'num_17',
+    'num_18',
+    'num_19',
+    'num_20',
 )
 
 class App:
@@ -359,6 +380,7 @@ class App:
             else:
                 self.playSound(SND_NG)
             self._curcmd = self._code[self._editpos]
+            self.playNum(self._editpos+1)
             self.playCmd(self._curcmd)
         elif k == '+':
             if self._editpos+1 < len(self._code):
@@ -366,6 +388,7 @@ class App:
             else:
                 self.playSound(SND_NG)
             self._curcmd = self._code[self._editpos]
+            self.playNum(self._editpos+1)
             self.playCmd(self._curcmd)
         elif k in SYM2CMD:
             if self.codelimit is None or self._editpos < self.codelimit:
@@ -392,20 +415,27 @@ class App:
         if k == 'BS':
             self.initEditor()
         elif k == 'ENTER':
-            self.startCode()
+            if self._running:
+                self._running = False
+            else:
+                self.resetState()
+                self._running = True
+                self._nexttime = 0
+                self.playSound('level_begin')
         elif k == '-':
             self._running = False
             if 0 < len(self._history):
                 (cmd, state) = self._history.pop(-1)
                 self.log('undo: %r' % cmd)
-                self.playCmd(cmd)
                 self.playSound('cmd_undo')
+                self.playCmd(cmd)
                 self.setState(state)
             else:
                 self.playSound(SND_NG)
         elif k == '+':
             self._running = False
             cmd = self._code[self._runpos]
+            self.playNum(self._runpos+1)
             self.playCmd(cmd)
             if cmd is not None:
                 self.addTask(self.stepCmd)
@@ -426,13 +456,6 @@ class App:
         else:
             self._running = False
         self.refresh()
-        return
-
-    def startCode(self):
-        self._running = not self._running
-        self._nexttime = 0
-        if self._runpos == 0:
-            self.playSound('level_begin')
         return
 
     def stepCmd(self):
@@ -548,6 +571,11 @@ class App:
             if not self._haskey:
                 self.jumpTo('H2')
         self.refresh()
+        return
+
+    def playNum(self, n):
+        if 0 <= n and n <= 20:
+            self.playSound('num_%02d' % n)
         return
 
     def playCmd(self, cmd):
