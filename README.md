@@ -3,6 +3,8 @@
 A LightBot clone for blind students.
 Works with Python2/3 + Pygame (including Raspberry Pi).
 
+  * https://www.youtube.com/watch?v=SyqehSvJHv8
+
 視覚障害者向け教材「仮想ロボットを使ったプログラミング入門」
 
 概要
